@@ -11,6 +11,7 @@ import {
 import { CreateCategoryDto, UpdateCategoryDto } from '../dtos/categories.dtos';
 import { CategoriesService } from '../services/categories.service';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { MongoIdPipe } from 'src/common/mongo-id.pipe';
 
 @ApiTags('Categories')
 @Controller('categories')
@@ -27,26 +28,26 @@ export class CategoriesController {
 
   @ApiOperation({ summary: 'Get all categories' })
   @Get()
-  findAll() {
-    return this.categoriesService.findAll();
+  async findAll() {
+    return await this.categoriesService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.categoriesService.findOne(id);
+  async findOne(@Param('id', MongoIdPipe) id: string) {
+    return await this.categoriesService.findOne(id);
   }
 
   @Post()
-  create(@Body() payload: CreateCategoryDto) {
-    const newCategory = this.categoriesService.create(payload);
+  async create(@Body() payload: CreateCategoryDto) {
+    const newCategory = await this.categoriesService.create(payload);
     return {
       category: newCategory,
     };
   }
 
   @Put(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
+  async update(
+    @Param('id', MongoIdPipe) id: string,
     @Body() payload: UpdateCategoryDto,
   ) {
     return {
@@ -56,7 +57,7 @@ export class CategoriesController {
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
+  async remove(@Param('id', MongoIdPipe) id: string) {
     this.categoriesService.remove(id);
     return {
       id,

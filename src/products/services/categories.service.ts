@@ -1,56 +1,43 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { CreateCategoryDto, UpdateCategoryDto } from '../dtos/categories.dtos';
 import { Category } from '../entities/category.entity';
 
 @Injectable()
 export class CategoriesService {
-  private counterId = 1;
-  private categories: Category[] = [
-    {
-      id: 1,
-      name: 'Category 1',
-    },
-  ];
+  constructor(
+    @InjectModel(Category.name) private categoryModel: Model<Category>,
+  ) {}
 
-  findAll() {
-    return this.categories;
+  async findAll() {
+    return await this.categoryModel.find().exec();
   }
 
-  findOne(id: number) {
-    return this.categories.find((item) => item.id === id);
-  }
-
-  create(payload: CreateCategoryDto) {
-    this.counterId = this.counterId + 1;
-    const newCategory = {
-      id: this.counterId,
-      ...payload,
-    };
-    this.categories.push(newCategory);
-    return newCategory;
-  }
-
-  update(id: number, payload: UpdateCategoryDto) {
-    const category = this.findOne(id);
-
+  async findOne(id: string) {
+    const category = await this.categoryModel.findById(id).exec();
     if (!category) {
-      return new NotFoundException(`Category #${id} not found`);
+      throw new NotFoundException(`Category #${id} not found`);
     }
-    const index = this.categories.findIndex((item) => item.id === id);
-    this.categories[index] = {
-      ...category,
-      ...payload,
-    };
-    return this.categories[index];
-  }
-
-  remove(id: number) {
-    const category = this.findOne(id);
-
-    if (!category) {
-      return new NotFoundException(`Category #${id} not found`);
-    }
-    this.categories.filter((item) => item.id !== id);
     return category;
+  }
+
+  async create(data: CreateCategoryDto) {
+    const newCategory = new this.categoryModel(data);
+    return newCategory.save();
+  }
+
+  async update(id: string, payload: UpdateCategoryDto) {
+    const category = await this.categoryModel
+      .findByIdAndUpdate(id, { $set: payload }, { new: true })
+      .exec();
+    if (!category) {
+      throw new NotFoundException(`Category #${id} not found`);
+    }
+    return category;
+  }
+
+  async remove(id: string) {
+    return await this.categoryModel.findByIdAndDelete(id).exec();
   }
 }

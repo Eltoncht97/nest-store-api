@@ -11,6 +11,7 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { BrandsService } from '../services/brands.service';
 import { CreateBrandDto, UpdateBrandDto } from '../dtos/brands.dtos';
+import { MongoIdPipe } from '../../common/mongo-id.pipe';
 
 @ApiTags('Brands')
 @Controller('brands')
@@ -18,37 +19,37 @@ export class BrandsController {
   constructor(private brandsService: BrandsService) {}
 
   @Get()
-  findAll() {
-    return this.brandsService.findAll();
+  async findAll() {
+    return await this.brandsService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.brandsService.findOne(id);
+  async findOne(@Param('id', MongoIdPipe) id: string) {
+    return await this.brandsService.findOne(id);
   }
 
   @Post()
-  create(@Body() payload: CreateBrandDto) {
-    const newProduct = this.brandsService.create(payload);
+  async create(@Body() payload: CreateBrandDto) {
+    const newProduct = await this.brandsService.create(payload);
     return {
       product: newProduct,
     };
   }
 
   @Put(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
+  async update(
+    @Param('id', MongoIdPipe) id: string,
     @Body() payload: UpdateBrandDto,
   ) {
     return {
       id,
-      product: this.brandsService.update(id, payload),
+      product: await this.brandsService.update(id, payload),
     };
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    this.brandsService.remove(id);
+  async remove(@Param('id', MongoIdPipe) id: string) {
+    await this.brandsService.remove(id);
     return {
       id,
     };

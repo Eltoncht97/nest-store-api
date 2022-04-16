@@ -11,8 +11,12 @@ import {
   HttpCode,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { ParseIntPipe } from '../../common/parse-int.pipe';
-import { CreateProductDto, UpdateProductDto } from '../dtos/products.dtos';
+import { MongoIdPipe } from 'src/common/mongo-id.pipe';
+import {
+  CreateProductDto,
+  UpdateProductDto,
+  FilterProductsDto,
+} from '../dtos/products.dtos';
 import { ProductsService } from '../services/products.service';
 
 @ApiTags('Products')
@@ -21,16 +25,10 @@ export class ProductsController {
   constructor(private productsService: ProductsService) {}
 
   @Get()
-  getProducts(
-    @Query('limit') limit = 100,
-    @Query('offset') offset = 0,
-    @Query('brand') brand: number,
-  ) {
-    // return {
-    //   message: `products limit: ${limit}, offset: ${offset}, brand: ${brand} `,
-    // };
+  async getProducts(@Query() params: FilterProductsDto) {
+    const products = await this.productsService.findAll(params);
     return {
-      products: this.productsService.findAll(),
+      products,
     };
   }
 
@@ -41,39 +39,36 @@ export class ProductsController {
 
   @Get(':productId')
   @HttpCode(HttpStatus.ACCEPTED)
-  getProduct(@Param('productId', ParseIntPipe) productId: number) {
+  async getProduct(@Param('productId', MongoIdPipe) productId: string) {
+    const product = await this.productsService.findOne(productId);
     return {
       message: `product ${productId}`,
-      product: this.productsService.findOne(productId),
+      product,
     };
   }
 
   @Post()
-  create(@Body() payload: CreateProductDto) {
-    // return {
-    //   message: 'Accion de crear',
-    //   payload,
-    // };
-    const newProduct = this.productsService.create(payload);
+  async create(@Body() payload: CreateProductDto) {
+    const newProduct = await this.productsService.create(payload);
     return {
       product: newProduct,
     };
   }
 
   @Put(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
+  async update(
+    @Param('id', MongoIdPipe) id: string,
     @Body() payload: UpdateProductDto,
   ) {
     return {
       id,
-      product: this.productsService.update(id, payload),
+      product: await this.productsService.update(id, payload),
     };
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    this.productsService.delete(id);
+  async remove(@Param('id', MongoIdPipe) id: string) {
+    await this.productsService.delete(id);
     return {
       id,
     };
