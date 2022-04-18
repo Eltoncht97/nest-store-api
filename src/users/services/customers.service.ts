@@ -1,58 +1,44 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { Customer } from '../entities/customer.entity';
 import { CreateCustomerDto, UpdateCustomerDto } from '../dtos/customers.dtos';
 
 @Injectable()
 export class CustomersService {
-  private counterId = 1;
-  private customers: Customer[] = [
-    {
-      id: 1,
-      name: 'Customer 1',
-      lastName: 'Chavez 1',
-      phone: '1234567',
-    },
-  ];
+  constructor(
+    @InjectModel(Customer.name) private customerModel: Model<Customer>,
+  ) {}
 
-  findAll() {
-    return this.customers;
+  async findAll() {
+    return await this.customerModel.find().exec();
   }
 
-  findOne(id: number) {
-    return this.customers.find((item) => item.id === id);
-  }
-
-  create(payload: CreateCustomerDto) {
-    this.counterId = this.counterId + 1;
-    const newCustomer = {
-      id: this.counterId,
-      ...payload,
-    };
-    this.customers.push(newCustomer);
-    return newCustomer;
-  }
-
-  update(id: number, payload: UpdateCustomerDto) {
-    const customer = this.findOne(id);
-
+  async findOne(id: string) {
+    const customer = await this.customerModel.findById(id).exec();
     if (!customer) {
-      return new NotFoundException(`Customer #${id} not found`);
+      throw new NotFoundException(`Customer #${id} not found`);
     }
-    const index = this.customers.findIndex((item) => item.id === id);
-    this.customers[index] = {
-      ...customer,
-      ...payload,
-    };
-    return this.customers[index];
-  }
-
-  remove(id: number) {
-    const customer = this.findOne(id);
-
-    if (!customer) {
-      return new NotFoundException(`Customer #${id} not found`);
-    }
-    this.customers.filter((item) => item.id !== id);
     return customer;
+  }
+
+  async create(data: CreateCustomerDto) {
+    console.log(data);
+    const newCustomer = new this.customerModel(data);
+    return newCustomer.save();
+  }
+
+  async update(id: string, payload: UpdateCustomerDto) {
+    const customer = await this.customerModel
+      .findByIdAndUpdate(id, { $set: payload }, { new: true })
+      .exec();
+    if (!customer) {
+      throw new NotFoundException(`Customer #${id} not found`);
+    }
+    return customer;
+  }
+
+  async remove(id: string) {
+    return await this.customerModel.findByIdAndDelete(id).exec();
   }
 }
