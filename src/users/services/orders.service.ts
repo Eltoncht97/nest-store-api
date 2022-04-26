@@ -47,4 +47,12 @@ export class OrdersService {
     productsIds.forEach((productId) => order.products.push(productId));
     return order.save();
   }
+
+  async ordersByCustomer(customerId: string) {
+    return await this.orderModel.find({
+      where: {
+        customer: customerId,
+      },
+    });
+  }
 }

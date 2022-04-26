@@ -6,6 +6,7 @@ import { CreateUserDto, UpdateUserDto } from '../dtos/users.dtos';
 import { Order } from '../entities/order.entity';
 import { User } from '../entities/user.entity';
 import { ProductsService } from '../../products/services/products.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -34,9 +35,18 @@ export class UsersService {
     return user;
   }
 
+  async findByEmail(email: string) {
+    const user = await this.userModel.findOne({ email }).exec();
+    return user;
+  }
+
   async create(data: CreateUserDto) {
     const newUser = new this.userModel(data);
-    return newUser.save();
+    const hashPassword = await bcrypt.hash(newUser.password, 10);
+    newUser.password = hashPassword;
+    const model = await newUser.save();
+    const { password, ...user } = model.toJSON();
+    return user;
   }
 
   async update(id: string, payload: UpdateUserDto) {
